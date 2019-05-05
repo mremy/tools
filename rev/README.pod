@@ -1,0 +1,9 @@
+=encoding utf8
+
+=head2 rev
+
+Inverse l'entrée.
+Si l'on prend un flux de n bits, et que C<b(n)> donne la valeur du bit à la nième position, ce que ce programme doit réaliser:
+C<f(i)=b(n-i-1)>.
+
+=cut

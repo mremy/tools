@@ -1,0 +1,27 @@
+=pod
+
+=head1 libbox
+
+This library help you to handle structures.
+
+=head1 Compilation
+
+You need cmake to compile this library, or create your own Makefile.
+
+=head1 Example
+
+  #include "libbox.h"
+
+=head1 TODO
+
+=over 1
+
+=item
+Add a working example
+
+=item
+Add debugging capabilities
+
+=back
+
+=cut
