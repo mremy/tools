@@ -1,0 +1,20 @@
+=pod
+
+=head2 png_libread
+
+C programm to read PNG image files using libpng: http://www.libpng.org/pub/png/
+
+=head2 build
+
+CMakeList.txt : command file for cmake
+Makefile: a minimalistic but sufficient one.
+
+Common makefile:
+make (default use make)
+make cmake (use cmake)
+
+=head2 TODO
+
+Use readline to load an image file, and more
+
+=cut
