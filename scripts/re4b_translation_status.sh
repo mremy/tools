@@ -30,7 +30,7 @@ do
 done
 
 # Avoid issues with language
-LC_ALL=C
+export LC_ALL=C
 
 # Define language to check, define default if no given here
 RE4B_LANG=${1:-FR}
