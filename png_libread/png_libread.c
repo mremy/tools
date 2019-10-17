@@ -83,8 +83,9 @@ int read_png_fd( FILE *fin, unsigned int sig_read ) {
   */
   png_ptr = png_create_read_struct( PNG_LIBPNG_VER_STRING, (png_voidp)NULL,
    NULL, NULL);
-  if( !png_ptr )
+  if( !png_ptr ) {
     return ERROR;
+  }
 
   png_info_ptr = png_create_info_struct( png_ptr );
   if( !png_info_ptr ) {
@@ -136,7 +137,7 @@ int read_png_fd( FILE *fin, unsigned int sig_read ) {
   /*
   ** definition de la structure png_struct_def
   ** /usr/include/png.h ligne 1236
-  ** avec: typedef struct png_struct_def png_struc
+  ** avec: typedef struct png_struct_def png_struct
   */
   (void) fprintf( stderr, "img size: %d x %d \n", png_ptr->width, png_ptr->height );
   /*
@@ -193,8 +194,7 @@ int main( void ) {
 
   uint32_t is_png;
   is_png = !png_sig_cmp( buf, 0, PNG_BYTES_TO_CHECK );
-  if (!is_png)
-  {
+  if (!is_png) {
     return( NOT_PNG );
   }
   /*
