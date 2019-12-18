@@ -3,14 +3,14 @@
 
 #include "chunks.h"
 
-#define DEBUG 30
+#define DEBUG 0
 
 char printable( char c ) {
 	if( isprint(c) ) { return c; }
 	else { return '.'; }
 }
 
-int search_4_chars( char * strsrc, size_t strlength, size_t * found ) {
+int search_4_chars( unsigned char * strsrc, size_t strlength, size_t * found ) {
 	size_t index;
 	int rc;
 	index = 4;
@@ -42,14 +42,14 @@ int search_4_chars( char * strsrc, size_t strlength, size_t * found ) {
 	return rc;
 }
 
-int get_chunk_tab_num( char * name, const char ** tab, uint32_t * num ) {
+int get_chunk_tab_num( unsigned char * name, const unsigned char ** tab, uint32_t * num ) {
 	int rc;
 	rc = 1;
 	for( size_t idx=0; idx<MAX_CHUNK_TYPE; idx++ ) {
 		#if DEBUG>10
 		fprintf( stderr, "  get_chunk_tab_num: idx %zu\n", idx );
 		#endif
-		if( strcmp( name, tab[idx] )==0 ) {
+		if( strcmp( (char *)name, (char *)tab[idx] )==0 ) {
 			*num = idx;
 			rc = 0;
 			break;
@@ -67,14 +67,19 @@ int main( int argc, char ** argv, char ** argenv ) {
 	ERR = stderr;
 
 	/* manage options with getopt */
+	uint32_t chunk_nbr_init;
 	char * file_name = NULL;
 	int c;
 
+	chunk_nbr_init = 0;
 	opterr = 0;
-	while((c=getopt(argc, argv, "f:")) != -1 ) {
+	while((c=getopt(argc, argv, "f:i:")) != -1 ) {
 		switch(c) {
 			case 'f':
 				file_name = optarg;
+				break;
+			case 'i':
+				chunk_nbr_init = strtoul( optarg, NULL, 10 );
 				break;
 		} /* switch */
 	} /* while */
@@ -89,22 +94,22 @@ int main( int argc, char ** argv, char ** argenv ) {
 
 	/* chunks */
 	char chunk_file_name[1024];
-	const char *chunk_name[MAX_CHUNK_TYPE];
-	chunk_name[__COUNTER__] = "NULL";
-	chunk_name[__COUNTER__] = "IHDR";
-	chunk_name[__COUNTER__] = "PLTE";
-	chunk_name[__COUNTER__] = "IDAT";
-	chunk_name[__COUNTER__] = "IEND";
-	chunk_name[__COUNTER__] = "sRGB";
-	chunk_name[__COUNTER__] = "gAMA";
-	chunk_name[__COUNTER__] = "pHYs";
-	chunk_name[__COUNTER__] = "tEXt";
+	const unsigned char *chunk_name[MAX_CHUNK_TYPE];
+	chunk_name[__COUNTER__] = (unsigned char *)"NULL";
+	chunk_name[__COUNTER__] = (unsigned char *)"IHDR";
+	chunk_name[__COUNTER__] = (unsigned char *)"PLTE";
+	chunk_name[__COUNTER__] = (unsigned char *)"IDAT";
+	chunk_name[__COUNTER__] = (unsigned char *)"IEND";
+	chunk_name[__COUNTER__] = (unsigned char *)"sRGB";
+	chunk_name[__COUNTER__] = (unsigned char *)"gAMA";
+	chunk_name[__COUNTER__] = (unsigned char *)"pHYs";
+	chunk_name[__COUNTER__] = (unsigned char *)"tEXt";
 
 	uint32_t chunk_nbr[MAX_CHUNK_TYPE];
 
 	/* */
-	char data[BUFS];
-	char chunk_found[5];
+	unsigned char data[BUFS];
+	unsigned char chunk_found[5];
 	chunk_found[4] = '\0';
 	size_t remaining_bytes;
 	size_t chunk_index;
@@ -112,7 +117,7 @@ int main( int argc, char ** argv, char ** argenv ) {
 	//void * chunk_start;
 	uint32_t chunk_size;
 	uint32_t chunk_tab_num;
-	//uint32_t chunk_crc;
+	uint32_t chunk_crc;
 	int rc1;
 
     /* read file */
@@ -120,7 +125,7 @@ int main( int argc, char ** argv, char ** argenv ) {
 
 	/* Initialisation */
 	for( size_t index=0; index<MAX_CHUNK_TYPE; index++ ) {
-		chunk_nbr[index] = 0;
+		chunk_nbr[index] = chunk_nbr_init;
 	}
 	current_index = 0;
 
@@ -155,7 +160,7 @@ int main( int argc, char ** argv, char ** argenv ) {
 			#endif
 			if( rc1==0 ) {
 				/* get chunk size */
-				chunk_size = htonl( (uint32_t)*(uint32_t *)(data+current_index+chunk_index) );
+				chunk_size = ntohl( (uint32_t)*(uint32_t *)(data+current_index+chunk_index) );
 				#if DEBUG>10
 				fprintf( ERR, "Chunk_size %d\n", chunk_size);
 				#endif
@@ -164,22 +169,43 @@ int main( int argc, char ** argv, char ** argenv ) {
 				chunk_found[1] = data[current_index+chunk_index+5];
 				chunk_found[2] = data[current_index+chunk_index+6];
 				chunk_found[3] = data[current_index+chunk_index+7];
-				/* get chunk data, if any */
 				/* get crc */
-				fprintf( OUT, "Chunk %s of size %x (%d) found at index %zu\n", \
+				chunk_crc = crc( &data[current_index+chunk_index+4], chunk_size+4);
+				fprintf( OUT, "Chunk %s of size %x (%d) found at index %zu crc %x\n", \
 					chunk_found, \
 					chunk_size, \
 					chunk_size, \
-					chunk_index );
+					chunk_index, \
+					chunk_crc );
 				current_index = current_index + chunk_index + chunk_size + 12;
 				remaining_bytes = remaining_bytes - 12 - chunk_size - chunk_index;
+				/* get chunk data, if any */
 				#if DEBUG>10
-				fprintf( ERR, " current_index %zu  chunk found %s\n", current_index, chunk_found );
+				fprintf( ERR, " current_index %zu  chunk found %s , crc %d\n", \
+				current_index, chunk_found, chunk_crc );
 				#endif
 				/* get index */
 				chunk_tab_num = 0;
 				get_chunk_tab_num( chunk_found, chunk_name, &chunk_tab_num );
-				//sprintf( chunk_file_name, "%s_chunk_%s_%d.bin", file_name, chunk_found, chunk_nbr[chunk_tab_num] );
+				sprintf( chunk_file_name, "%s_chunk_%s_%d.bin", file_name, chunk_found, chunk_nbr[chunk_tab_num] );
+				chunk_nbr[chunk_tab_num] = chunk_nbr[chunk_tab_num] + 1;
+				/* Try to open output file for current chunk */
+				FILE * fhout;
+				if( (fhout=fopen(chunk_file_name, "wb")) != NULL) {
+					uint32_t tmpu32;
+					tmpu32 = htonl(chunk_size);
+					fwrite( &tmpu32, 1, sizeof(uint32_t), fhout );
+					fprintf( fhout, "%s", chunk_found );
+					/* Put data, if any */
+					if( chunk_size>0 ) {
+						for( size_t idx=0; idx<chunk_size; idx++ ) {
+							fputc( data[current_index-chunk_size-4+idx], fhout );
+						}
+					}
+					tmpu32 = htonl(chunk_crc);
+					fwrite( &tmpu32, 1, sizeof(uint32_t), fhout );
+					fclose(fhout);
+				}
 			} /* if chunk found */
 			else {
 				remaining_bytes=-1;

@@ -32,10 +32,10 @@
 unsigned long crc(unsigned char *, int );
 
 /* Convert binary to printable data */
-void data_to_string(char *,  char *, size_t );
+void data_to_string( unsigned char *, unsigned char *, size_t );
 
 /* Chercher 4 caractères ASCII consécutifs */
-int search_4_chars( char *, size_t, size_t * );
+int search_4_chars( unsigned char *, size_t, size_t * );
 
 #endif
 /* # EOF */
