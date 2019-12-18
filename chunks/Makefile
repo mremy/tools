@@ -2,8 +2,9 @@
 #
 # make.chunks
 #
-COMMON=Makefile
-BIN=chunks
+BIN = chunks
+COMMON = Makefile
+PREFIX ?= /usr/local
 
 all: LC_ALL=C
 all: chunks
@@ -19,5 +20,9 @@ chunks: chunks.c chunks.h crc.c $(COMMON)
 clean:
 	-@rm $(BIN)
 
-# vim:set ft=make:
+.PHONY: install
+install: chunks
+	cp chunks $(PREFIX)/bin/
+
+# vim: set ft=make:
 # EOF
