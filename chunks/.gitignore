@@ -1,6 +1,4 @@
 # SOF
 *.bin
 *.png
-*.o
-chunks
 # EOF

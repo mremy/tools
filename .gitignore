@@ -23,4 +23,6 @@
 *.hex
 
 # Bin
+chunks
 nop
+png_libread
