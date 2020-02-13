@@ -1,0 +1,54 @@
+#! /usr/bin/env bash
+# SOF
+
+# Standard monitoring values
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+# Default return value
+RC=3
+PHYS=0
+VIRT=0
+
+# Check available commands
+_DMESG=$(which dmesg)
+_DETECTVIRT=$(which systemd-detect-virt)
+_HOSTNAMECTL=$(which hostnamectl)
+_HWCLOCK=$(which hwclock)
+
+DMESG=${_DMESG:-NONE}
+DETECTVIRT=${_DETECTVIRT:-NONE}
+HOSTNAMECTL=${_HOSTNAMECTL:-NONE}
+HWCLOCK=${_HWCLOCK:-NONE}
+
+# Check if we are root
+if [ $(id -u) -ne 0 ]
+then
+    echo "I m not id 0"
+    exit ${RC}
+fi
+
+# Are we on a real or virtual machine?
+if [ ${DMESG} != "NONE" ]
+then
+	CHECK1=$(${DMESG} -T | grep "Hypervisor detected"|wc -l)
+	[ ${CHECK1} -eq 0 ] && let "PHYS++"
+fi
+
+if [ ${DETECTVIRT} != "NONE" ]
+then
+
+fi
+
+if [ ${PHYS} -gt 0 -a ${VIRT} -eq 0 ]
+then # Probably a real machine
+
+fi
+
+# Check hardware clock, if relevant
+
+exit ${RC}
+
+# EOF
