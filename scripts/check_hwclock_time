@@ -1,6 +1,10 @@
 #! /usr/bin/env bash
 # SOF
 
+# Standart values
+FALSE=0
+TRUE=1
+
 # Standard monitoring values
 STATE_OK=0
 STATE_WARNING=1
@@ -8,9 +12,7 @@ STATE_CRITICAL=2
 STATE_UNKNOWN=3
 
 # Default return value
-RC=3
-PHYS=0
-VIRT=0
+RC=${STATE_UNKNOWN}
 
 # Check available commands
 _DMESG=$(which dmesg)
@@ -23,31 +25,58 @@ DETECTVIRT=${_DETECTVIRT:-NONE}
 HOSTNAMECTL=${_HOSTNAMECTL:-NONE}
 HWCLOCK=${_HWCLOCK:-NONE}
 
-# Check if we are root
-if [ $(id -u) -ne 0 ]
-then
-    echo "I m not id 0"
-    exit ${RC}
-fi
+function am_i_root () {
+	# Check if we are root
+	if [ $(id -u) -ne 0 ]
+	then
+	    echo "I m not id 0"
+	    return ${FALSE}
+	fi
+	return ${TRUE}
+}
 
-# Are we on a real or virtual machine?
-if [ ${DMESG} != "NONE" ]
-then
-	CHECK1=$(${DMESG} -T | grep "Hypervisor detected"|wc -l)
-	[ ${CHECK1} -eq 0 ] && let "PHYS++"
-fi
+function is_real_hardware () {
+	local PHYS=0
+	local VIRT=0
+	# Are we on a real or virtual machine?
+	if [ ${DMESG} != "NONE" ]
+	then
+		CHECK1=$(${DMESG} -T | grep "Hypervisor detected"|wc -l)
+		[ ${CHECK1} -eq 0 ] && let "PHYS++"
+		[ ${CHECK1} -eq 1 ] && let "VIRT++"
+	fi
 
-if [ ${DETECTVIRT} != "NONE" ]
-then
+	if [ ${DETECTVIRT} != "NONE" ]
+	then
+		CHECK2=$( ${DETECTVIRT}|grep "none"|wc -l)
+		[ ${CHECK2} -eq 1 ] && let "PHYS++"
+	fi
 
-fi
+	if [ ${PHYS} -gt 0 -a ${VIRT} -eq 0 ]
+	then # Probably a real machine
+		return ${TRUE}
+	fi
+	return ${FALSE}
+}
 
-if [ ${PHYS} -gt 0 -a ${VIRT} -eq 0 ]
-then # Probably a real machine
+### Main part
+LC_ALL=C
 
-fi
+[ am_i_root != 0 ] || exit ${RC}
+
+# Check if real or virtual
+[ is_real_hardware ] || exit ${RC}
 
 # Check hardware clock, if relevant
+# From hwclock man page:
+# hwclock -r give date/time in localtime, even if the hardware clock store
+# time in UTC.
+if [ ${HWCLOCK} != "NONE" ]
+then
+	#echo "hwclock"
+	hwclock -r
+	RC=0
+fi
 
 exit ${RC}
 
